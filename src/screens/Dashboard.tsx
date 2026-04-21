@@ -17,6 +17,8 @@ export const Dashboard = () => {
   useEffect(() => {
     if (user) {
       DataService.getMoodLogs(user.user_id).then(setRecentLogs);
+      // Check for monthly summary on the last day of the month
+      AlertService.checkMonthlySummary(user.user_id);
     }
   }, [user]);
 
@@ -32,8 +34,8 @@ export const Dashboard = () => {
   const timeDay = getTimeOfDay();
   const themeStyles = {
     morning: {
-      card: "bg-gradient-to-br from-[#FF9EAA] to-[#FFD1DA]",
-      buttonText: "text-[#FF9EAA]"
+      card: "bg-gradient-to-br from-[#FF8095] to-[#FFB0C0]",
+      buttonText: "text-[#FF8095]"
     },
     afternoon: {
       card: "bg-gradient-to-br from-blue-400 to-indigo-500",
@@ -123,8 +125,8 @@ export const Dashboard = () => {
             <span className="text-4xl">{latestMood.mood_emoji}</span>
             <div>
               <p className="font-bold text-gray-700">{latestMood.mood_label}</p>
-              <p className="text-[10px] text-gray-400 font-medium">
-                {format(parseISO(latestMood.created_at || `${latestMood.date}T${latestMood.time}`), 'yyyy-MM-dd HH:mm')}
+              <p className="text-[10px] text-gray-400 font-medium font-mono">
+                {latestMood.date} {latestMood.time}
               </p>
             </div>
           </Card>

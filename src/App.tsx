@@ -94,7 +94,7 @@ const AnimatedRoutes = () => {
           </ProtectedRoute>
         } />
 
-        <Route path="/panda" element={
+        <Route path="/activities/panda" element={
           <ProtectedRoute>
             <Shell>
               <PandaTalk />

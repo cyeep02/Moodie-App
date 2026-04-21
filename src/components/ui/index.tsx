@@ -5,7 +5,7 @@ export const Button: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { 
   children, className, variant = 'primary', ...props 
 }) => {
   const variants = {
-    primary: "bg-[#FF9EAA] text-white hover:bg-[#ff8a98] shadow-md",
+    primary: "bg-[#FF8095] text-white hover:bg-[#ff6b83] active:bg-[#f25c74] shadow-md transition-all",
     secondary: "bg-[#B0E0E6] text-[#4682B4] hover:bg-[#a0d0d6]",
     ghost: "bg-transparent text-gray-500 hover:bg-gray-100"
   };
@@ -13,7 +13,7 @@ export const Button: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { 
   return (
     <button 
       className={cn(
-        "px-6 py-3 rounded-2xl font-semibold transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100",
+        "px-6 py-3 rounded-2xl font-semibold transition-all active:scale-95 disabled:grayscale disabled:opacity-30 disabled:cursor-not-allowed disabled:active:scale-100",
         variants[variant],
         className
       )}
@@ -33,7 +33,7 @@ export const Card: React.FC<{ children: React.ReactNode; className?: string }> =
 export const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = ({ className, ...props }) => (
   <input 
     className={cn(
-      "w-full px-4 py-3 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:border-[#FF9EAA] transition-all outline-none text-gray-700",
+      "w-full px-4 py-3 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:border-[#FF8095] transition-all outline-none text-gray-700",
       className
     )}
     {...props}

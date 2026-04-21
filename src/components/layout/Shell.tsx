@@ -1,11 +1,12 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { Home, BarChart2, Heart, MessageCircle, LogOut } from 'lucide-react';
 import { DataService } from '../../services/dataService';
 import { cn } from '../../lib/utils';
 
 export const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const user = DataService.getCurrentUser();
 
   const handleLogout = () => {
@@ -13,14 +14,21 @@ export const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     navigate('/login');
   };
 
+  // Hide shell elements for immersive activity pages
+  const isActivityPage = location.pathname.includes('/activities/');
+
   if (!user) return <>{children}</>;
+
+  if (isActivityPage) {
+    return <main className="h-screen bg-white">{children}</main>;
+  }
 
   return (
     <div className="flex flex-col h-screen bg-[#FDFCFB]">
       {/* Header */}
       <header className="px-6 py-4 flex justify-between items-center bg-white shadow-sm shrink-0">
         <div>
-          <h1 className="text-xl font-bold text-[#FF9EAA]">Moodie</h1>
+          <h1 className="text-xl font-bold text-[#FF8095]">Moodie</h1>
           <p className="text-xs text-gray-400">Welcome, {user.full_name?.split(' ')[0] || 'User'}!</p>
         </div>
         <button 
@@ -42,7 +50,7 @@ export const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => 
           to="/" 
           className={({ isActive }) => cn(
             "flex flex-col items-center gap-1 transition-colors",
-            isActive ? "text-[#FF9EAA]" : "text-gray-400"
+            isActive ? "text-[#FF8095]" : "text-gray-400"
           )}
         >
           <Home size={24} />
@@ -53,7 +61,7 @@ export const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => 
           to="/activities" 
           className={({ isActive }) => cn(
             "flex flex-col items-center gap-1 transition-colors",
-            isActive ? "text-[#FF9EAA]" : "text-gray-400"
+            isActive ? "text-[#FF8095]" : "text-gray-400"
           )}
         >
           <Heart size={24} />
@@ -64,7 +72,7 @@ export const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => 
           to="/charts" 
           className={({ isActive }) => cn(
             "flex flex-col items-center gap-1 transition-colors",
-            isActive ? "text-[#FF9EAA]" : "text-gray-400"
+            isActive ? "text-[#FF8095]" : "text-gray-400"
           )}
         >
           <BarChart2 size={24} />

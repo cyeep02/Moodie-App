@@ -32,7 +32,6 @@ export interface MoodLog {
   mood_score: number;
   note: string;
   risk_flag: boolean;
-  support_requested: boolean;
   created_at: string;
 }
 
@@ -59,10 +58,10 @@ export interface Alert {
 }
 
 export const MOOD_CONFIG: Record<MoodLabel, { emoji: string; score: number; color: string }> = {
-  'Very Happy': { emoji: '🤩', score: 5, color: '#FFD700' },
-  'Happy': { emoji: '😊', score: 4, color: '#90EE90' },
-  'Calm': { emoji: '😌', score: 3, color: '#ADD8E6' },
-  'Worried': { emoji: '😟', score: 2, color: '#FFB6C1' },
-  'Sad': { emoji: '😢', score: 1, color: '#B0C4DE' },
-  'Very Sad': { emoji: '😭', score: 0, color: '#D3D3D3' },
+  'Very Happy': { emoji: '🤩', score: 6, color: '#FFD700' },
+  'Happy': { emoji: '😊', score: 5, color: '#90EE90' },
+  'Calm': { emoji: '😌', score: 4, color: '#ADD8E6' },
+  'Worried': { emoji: '😟', score: 3, color: '#FFB6C1' },
+  'Sad': { emoji: '😢', score: 2, color: '#B0C4DE' },
+  'Very Sad': { emoji: '😭', score: 1, color: '#D3D3D3' },
 };

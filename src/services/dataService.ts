@@ -1,6 +1,6 @@
 import { User, MoodLog, ActivityLog, MOOD_CONFIG, MoodLabel, Alert } from '../types';
 import { generateId, formatDate, formatTime } from '../lib/utils';
-import { isAfter, subDays } from 'date-fns';
+import { isAfter, subDays, isLastDayOfMonth, format, startOfMonth, endOfMonth } from 'date-fns';
 
 /**
  * dataService.ts
@@ -183,18 +183,15 @@ export const DataService = {
   },
 
   // MOOD LOGS
-  async saveMoodLog(log: Omit<MoodLog, 'log_id' | 'date' | 'time' | 'risk_flag' | 'created_at' | 'support_requested'>): Promise<MoodLog> {
+  async saveMoodLog(log: Omit<MoodLog, 'log_id' | 'date' | 'time' | 'risk_flag' | 'created_at'>): Promise<MoodLog> {
     const newLog: any = {
       ...log,
       log_id: generateId(),
       date: formatDate(new Date()),
       time: formatTime(new Date()),
-      risk_flag: log.mood_score <= 1,
-      support_requested: false,
+      risk_flag: log.mood_score <= 2,
       created_at: new Date().toISOString(),
-      // Send dual keys for spreadsheet compatibility
-      mood_score: log.mood_score,
-      score: log.mood_score
+      mood_score: log.mood_score
     };
     const result = await fetchSheet<MoodLog>('saveMood', 'POST', newLog);
     return result;
@@ -229,20 +226,39 @@ export const DataService = {
       return null;
     };
 
+    const cleanDateTime = (dateVal: any, timeVal: any) => {
+      let d = String(dateVal || '');
+      let t = String(timeVal || '');
+      
+      // Handle the ISO strings often returned by Sheets for dates
+      if (d.includes('T')) d = d.split('T')[0];
+      
+      // Handle the 1899 epoch sheets often uses for time-only fields
+      if (t.includes('T')) t = t.split('T')[1];
+      if (t.includes('.')) t = t.split('.')[0]; // Remove ms
+      
+      // Ensure seconds are visible
+      if (t.split(':').length === 2) t += ':00';
+      
+      return { cleanDate: d, cleanTime: t };
+    };
+
     return logs
-      .map(l => ({
-        log_id: String(getFuzzyVal(l, ['logid', 'id']) || ''),
-        user_id: String(getFuzzyVal(l, ['userid', 'user_id']) || ''),
-        date: String(getFuzzyVal(l, ['date']) || ''),
-        time: String(getFuzzyVal(l, ['time']) || ''),
-        mood_emoji: String(getFuzzyVal(l, ['moodemoji', 'emoji']) || ''),
-        mood_label: String(getFuzzyVal(l, ['moodlabel', 'label']) || '') as MoodLabel,
-        mood_score: parseInt(getFuzzyVal(l, ['moodscore', 'score']), 10) || 0,
-        note: String(getFuzzyVal(l, ['note', 'remarks']) || ''),
-        risk_flag: !!getFuzzyVal(l, ['riskflag', 'risk']),
-        support_requested: !!getFuzzyVal(l, ['supportrequested', 'support']),
-        created_at: String(getFuzzyVal(l, ['createdat', 'created_at']) || '')
-      }))
+      .map(l => {
+        const { cleanDate, cleanTime } = cleanDateTime(getFuzzyVal(l, ['date']), getFuzzyVal(l, ['time']));
+        return {
+          log_id: String(getFuzzyVal(l, ['logid', 'id']) || ''),
+          user_id: String(getFuzzyVal(l, ['userid', 'user_id']) || ''),
+          date: cleanDate,
+          time: cleanTime,
+          mood_emoji: String(getFuzzyVal(l, ['moodemoji', 'emoji']) || ''),
+          mood_label: String(getFuzzyVal(l, ['moodlabel', 'label']) || '') as MoodLabel,
+          mood_score: parseInt(getFuzzyVal(l, ['moodscore', 'score']), 10) || 1,
+          note: String(getFuzzyVal(l, ['note', 'remarks']) || ''),
+          risk_flag: !!getFuzzyVal(l, ['riskflag', 'risk']),
+          created_at: String(getFuzzyVal(l, ['createdat', 'created_at']) || '')
+        };
+      })
       .filter(l => l.user_id === userId)
       .sort((a, b) => {
         const dComp = (b.date || '').localeCompare(a.date || '');
@@ -265,8 +281,58 @@ export const DataService = {
   },
 
   async getActivityLogs(userId: string): Promise<ActivityLog[]> {
-    const logs = await fetchSheet<ActivityLog[]>('getActivityLogs', 'GET');
-    return logs.filter(l => l.user_id === userId);
+    const rawData = await fetchSheet<any[]>('getActivityLogs', 'GET');
+    
+    let logs: any[] = [];
+    if (Array.isArray(rawData)) {
+      if (Array.isArray(rawData[0])) {
+        const headers = rawData[0].map((h: any) => String(h).toLowerCase().replace(/[\s_]/g, ''));
+        logs = rawData.slice(1).map(row => {
+          const obj: any = {};
+          headers.forEach((h: string, i: number) => {
+            obj[h] = row[i];
+          });
+          return obj;
+        });
+      } else {
+        logs = rawData;
+      }
+    }
+
+    const getFuzzyVal = (obj: any, targets: string[]) => {
+      const keys = Object.keys(obj);
+      for (const target of targets) {
+        const normTarget = target.toLowerCase().replace(/[\s_]/g, '');
+        const match = keys.find(k => k.toLowerCase().replace(/[\s_]/g, '') === normTarget);
+        if (match) return obj[match];
+      }
+      return null;
+    };
+
+    const cleanDateTime = (dateVal: any, timeVal: any) => {
+      let d = String(dateVal || '');
+      let t = String(timeVal || '');
+      if (d.includes('T')) d = d.split('T')[0];
+      if (t.includes('T')) t = t.split('T')[1];
+      if (t.includes('.')) t = t.split('.')[0];
+      if (t.split(':').length === 2) t += ':00';
+      return { cleanDate: d, cleanTime: t };
+    };
+
+    return logs
+      .map(l => {
+        const { cleanDate, cleanTime } = cleanDateTime(getFuzzyVal(l, ['date']), getFuzzyVal(l, ['time']));
+        return {
+          activity_id: String(getFuzzyVal(l, ['activityid', 'id']) || ''),
+          user_id: String(getFuzzyVal(l, ['userid', 'user_id']) || ''),
+          result_name: String(getFuzzyVal(l, ['resultname', 'activity', 'game']) || ''),
+          duration: parseInt(getFuzzyVal(l, ['duration', 'time_spent']), 10) || 0,
+          date: cleanDate,
+          time: cleanTime,
+          created_at: String(getFuzzyVal(l, ['createdat', 'created_at']) || '')
+        };
+      })
+      .filter(l => l.user_id === userId);
   }
 };
 
@@ -288,9 +354,9 @@ export const AlertService = {
     const logs = await DataService.getMoodLogs(userId);
     if (logs.length < 3) return { trigger: false, reason: null };
 
-    // Check for last 3 mood scores 1 or below
+    // Check for last 3 mood scores 2 or below (Sad or Very Sad)
     const recent3 = logs.slice(0, 3);
-    const risk = recent3.every(l => l.mood_score <= 1);
+    const risk = recent3.every(l => l.mood_score <= 2);
     
     if (risk) {
       const reason = 'Last 3 mood entries were low (Sad or Very Sad)';
@@ -323,6 +389,117 @@ export const AlertService = {
     });
 
     console.log(`[Support Notification] Manual alert sent for ${user.full_name} to ${user.parent_email}`);
+    return true;
+  },
+
+  async checkSensitiveContent(text: string, userId: string): Promise<boolean> {
+    const sensitivePatterns = [
+      /kill\s+myself/i,
+      /commit\s+suicide/i,
+      /kill\s+someone/i,
+      /steal/i,
+      /hurt\s+myself/i,
+      /end\s+my\s+life/i,
+      /want\s+to\s+die/i,
+      /buying\s+a\s+gun/i,
+      /planning\s+to\s+hurt/i
+    ];
+
+    const isSensitive = sensitivePatterns.some(pattern => pattern.test(text));
+
+    if (isSensitive) {
+      await this.saveAlert({
+        user_id: userId,
+        trigger_reason: `SENSITIVE CONTENT DETECTED: "${text.substring(0, 50)}..."`,
+        recent_mood_summary: 'Chat Safety Trigger',
+        parent_notified: true,
+        notification_status: 'Sent'
+      });
+      return true;
+    }
+
+    return false;
+  },
+
+  async getAlerts(userId: string): Promise<Alert[]> {
+    const rawData = await fetchSheet<any[]>('getAlerts', 'GET');
+    let alerts: any[] = [];
+    if (Array.isArray(rawData)) {
+      if (Array.isArray(rawData[0])) {
+        const headers = rawData[0].map((h: any) => String(h).toLowerCase().replace(/[\s_]/g, ''));
+        alerts = rawData.slice(1).map(row => {
+          const obj: any = {};
+          headers.forEach((h: string, i: number) => {
+            obj[h] = row[i];
+          });
+          return obj;
+        });
+      } else {
+        alerts = rawData;
+      }
+    }
+
+    const getFuzzyVal = (obj: any, targets: string[]) => {
+      const keys = Object.keys(obj);
+      for (const target of targets) {
+        const normTarget = target.toLowerCase().replace(/[\s_]/g, '');
+        const match = keys.find(k => k.toLowerCase().replace(/[\s_]/g, '') === normTarget);
+        if (match) return obj[match];
+      }
+      return null;
+    };
+
+    return alerts
+      .map(a => ({
+        alert_id: String(getFuzzyVal(a, ['alertid', 'id']) || ''),
+        user_id: String(getFuzzyVal(a, ['userid', 'user_id']) || ''),
+        date: String(getFuzzyVal(a, ['date']) || ''),
+        time: String(getFuzzyVal(a, ['time']) || ''),
+        trigger_reason: String(getFuzzyVal(a, ['triggerreason', 'reason']) || ''),
+        recent_mood_summary: String(getFuzzyVal(a, ['recentmoodsummary', 'summary']) || ''),
+        parent_notified: !!getFuzzyVal(a, ['parentnotified', 'notified']),
+        notification_status: String(getFuzzyVal(a, ['notificationstatus', 'status']) || ''),
+        created_at: String(getFuzzyVal(a, ['createdat', 'created_at']) || '')
+      }))
+      .filter(a => a.user_id === userId);
+  },
+
+  async checkMonthlySummary(userId: string): Promise<boolean> {
+    const today = new Date();
+    if (!isLastDayOfMonth(today)) return false;
+
+    const monthYear = format(today, 'MMMM yyyy');
+    const triggerReason = `Monthly Mood Summary: ${monthYear}`;
+
+    // 1. Check if already sent today
+    const existingAlerts = await this.getAlerts(userId);
+    const alreadySent = existingAlerts.some(a => a.trigger_reason === triggerReason);
+    if (alreadySent) return false;
+
+    // 2. Calculate summary
+    const allLogs = await DataService.getMoodLogs(userId);
+    const monthStart = startOfMonth(today);
+    const monthEnd = endOfMonth(today);
+    
+    const monthLogs = allLogs.filter(l => {
+      const logDate = new Date(l.date);
+      return logDate >= monthStart && logDate <= monthEnd;
+    });
+
+    if (monthLogs.length === 0) return false;
+
+    const avgScore = Math.round(monthLogs.reduce((acc, curr) => acc + curr.mood_score, 0) / monthLogs.length);
+    const moodEntry = Object.entries(MOOD_CONFIG).find(([_, config]) => config.score === avgScore);
+    const summaryLabel = moodEntry?.[0] || 'Mixed';
+    
+    await this.saveAlert({
+      user_id: userId,
+      trigger_reason: triggerReason,
+      recent_mood_summary: `Monthly overall mood: ${summaryLabel}. Total check-ins: ${monthLogs.length}`,
+      parent_notified: true,
+      notification_status: 'Sent'
+    });
+
     return true;
   }
 };

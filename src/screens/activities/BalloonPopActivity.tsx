@@ -27,11 +27,11 @@ export const BalloonPopActivity = () => {
   const [popEffects, setPopEffects] = useState<PopEffect[]>([]);
   const [score, setScore] = useState(0);
   const [gameActive, setGameActive] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(20);
+  const [timeLeft, setTimeLeft] = useState(30);
   const startTime = useRef(Date.now());
   const gameInterval = useRef<any>(null);
 
-  const colors = ['#93C5FD', '#60A5FA', '#FF9EAA', '#D8B4FE', '#86EFAC'];
+  const colors = ['#93C5FD', '#60A5FA', '#FF8095', '#D8B4FE', '#86EFAC'];
 
   const spawnBalloon = () => {
     const id = Math.random().toString(36).substring(2, 9);
@@ -40,7 +40,7 @@ export const BalloonPopActivity = () => {
       x: Math.random() * 80 + 10, // 10% to 90%
       y: 110, // Start below screen
       color: colors[Math.floor(Math.random() * colors.length)],
-      speed: Math.random() * 2 + 1,
+      speed: Math.random() * 0.6 + 0.4, // Reduced from * 2 + 1 for slower, more relaxing movement
       size: Math.random() * 20 + 60 // 60px to 80px
     };
     setBalloons(prev => [...prev, newBalloon]);
@@ -51,7 +51,7 @@ export const BalloonPopActivity = () => {
       gameInterval.current = setInterval(() => {
         spawnBalloon();
         setTimeLeft(t => t - 1);
-      }, 1000);
+      }, 1500);
     } else if (timeLeft === 0 && gameActive) {
       clearInterval(gameInterval.current);
       endGame();
@@ -139,7 +139,7 @@ export const BalloonPopActivity = () => {
             <p className="text-gray-400 text-xs mt-4">Great focus! You're getting stronger.</p>
           </Card>
           <div className="flex flex-col gap-3">
-              <Button onClick={() => { setTimeLeft(20); setScore(0); setBalloons([]); setGameActive(true); }}>Play Again</Button>
+              <Button onClick={() => { setTimeLeft(30); setScore(0); setBalloons([]); setGameActive(true); }}>Play Again</Button>
               <Button variant="ghost" onClick={finish}>Back to Menu</Button>
           </div>
         </motion.div>

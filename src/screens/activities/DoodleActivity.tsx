@@ -10,7 +10,7 @@ export const DoodleActivity = () => {
   const user = DataService.getCurrentUser();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [color, setColor] = useState('#FF9EAA');
+  const [color, setColor] = useState('#FF8095');
   const [brushSize, setBrushSize] = useState(5);
   const [showStatus, setShowStatus] = useState<string | null>(null);
   const startTime = useRef(Date.now());
@@ -172,7 +172,7 @@ export const DoodleActivity = () => {
           </div>
           <div className="grid grid-cols-9 gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {[
-              '#FF5C8D', '#FF9EAA', '#FFD1DA', '#FF7F50', '#FFBD69', '#FFD700',
+              '#FF5C8D', '#FF8095', '#FFD1DA', '#FF7F50', '#FFBD69', '#FFD700',
               '#4CB9E7', '#ADD8E6', '#B2A4FF', '#A084E8', '#90EE90', '#3E517A',
               '#333333', '#888888', '#CCCCCC', '#FFFFFF', '#CD5C5C', '#8B4513'
             ].map(c => (

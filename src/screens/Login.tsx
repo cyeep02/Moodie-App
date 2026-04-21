@@ -48,7 +48,7 @@ export const Login = () => {
           <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-sm">
             <span className="text-4xl">🐼</span>
           </div>
-          <h1 className="text-3xl font-bold text-[#FF9EAA]">Moodie</h1>
+          <h1 className="text-3xl font-bold text-[#FF8095]">Moodie</h1>
           <p className="text-gray-500 font-medium tracking-tight mt-1">Hello friend, welcome back!</p>
         </div>
 
@@ -85,7 +85,7 @@ export const Login = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-[#FF9EAA] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-[#FF8095] transition-colors"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -98,7 +98,7 @@ export const Login = () => {
         </Card>
 
         <p className="text-center mt-6 text-sm text-gray-400">
-          First time here? <Link to="/register" className="text-[#FF9EAA] font-bold">Create Account</Link>
+          First time here? <Link to="/register" className="text-[#FF8095] font-bold">Create Account</Link>
         </p>
       </motion.div>
     </div>

@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Card } from '../components/ui';
-import { Wind, Palette, Ghost, Sparkles, MessageCircle } from 'lucide-react';
+import { Wind, Palette, Ghost, Sparkles, MessageCircle, Clock } from 'lucide-react';
+import { DataService } from '../services/dataService';
+import { ActivityLog } from '../types';
 
 const ACTIVITIES = [
   {
@@ -35,12 +37,30 @@ const ACTIVITIES = [
     desc: 'Chat with your supportive panda friend.',
     icon: <MessageCircle size={32} />,
     color: 'bg-green-50 text-green-600',
-    path: '/panda'
+    path: '/activities/panda'
   }
 ];
 
 export const ActivitiesMenu = () => {
   const navigate = useNavigate();
+  const user = DataService.getCurrentUser();
+  const [lastActivity, setLastActivity] = useState<ActivityLog | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      DataService.getActivityLogs(user.user_id).then(logs => {
+        if (logs.length > 0) {
+          // Sort by date and time to get the absolute last one
+          const sorted = [...logs].sort((a, b) => {
+            const dateComp = b.date.localeCompare(a.date);
+            if (dateComp !== 0) return dateComp;
+            return b.time.localeCompare(a.time);
+          });
+          setLastActivity(sorted[0]);
+        }
+      });
+    }
+  }, [user]);
 
   return (
     <div className="p-6 space-y-8 pb-24 overflow-y-auto max-h-screen">
@@ -69,6 +89,33 @@ export const ActivitiesMenu = () => {
           ))}
         </div>
       </Card>
+
+      {/* Your Last Game Section - Now below the grid */}
+      {lastActivity && (
+        <section className="space-y-3">
+          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest px-2">Your Last Game</h4>
+          <Card className="flex items-center gap-4">
+            <div className="p-3 bg-gray-100 rounded-2xl text-gray-400">
+              <Clock size={24} />
+            </div>
+            <div>
+              <p className="font-bold text-gray-700">
+                {lastActivity.result_name.includes('(') 
+                  ? lastActivity.result_name.split('(')[0].trim() 
+                  : lastActivity.result_name}
+              </p>
+              {lastActivity.result_name.includes('(') && (
+                <p className="text-[10px] text-gray-500 font-medium leading-none mb-1">
+                  ({lastActivity.result_name.split('(')[1]}
+                </p>
+              )}
+              <p className="text-[10px] text-gray-400 font-medium tabular-nums">
+                {lastActivity.date} {lastActivity.time}
+              </p>
+            </div>
+          </Card>
+        </section>
+      )}
 
       <section className="bg-yellow-50 p-6 rounded-[2rem] border border-yellow-100 mt-4 space-y-2 text-center">
         <div className="flex items-center justify-center gap-2 text-yellow-800 font-bold mb-1">

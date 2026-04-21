@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, ArrowLeft, Heart } from 'lucide-react';
+import { Send, ArrowLeft, Heart, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { jsPDF } from 'jspdf';
 import { ai, PANDA_SYSTEM_INSTRUCTION } from '../../lib/ai';
-import { DataService } from '../../services/dataService';
+import { DataService, AlertService } from '../../services/dataService';
 import { cn } from '../../lib/utils';
 
 interface Message {
@@ -32,6 +33,12 @@ export const PandaTalk = () => {
 
     const userMsg: Message = { id: Date.now().toString(), role: 'user', text: input };
     setMessages(prev => [...prev, userMsg]);
+    
+    // Safety check for sensitive words
+    if (user) {
+      AlertService.checkSensitiveContent(input, user.user_id);
+    }
+
     setInput('');
     setIsTyping(true);
 
@@ -74,8 +81,57 @@ export const PandaTalk = () => {
     navigate('/activities');
   };
 
+  const downloadChat = () => {
+    const doc = new jsPDF();
+    const title = "Panda Talk Conversation";
+    const studentName = user?.full_name || 'Student';
+    const dateStr = new Date().toLocaleString();
+
+    doc.setFontSize(18);
+    doc.text(title, 10, 20);
+    
+    doc.setFontSize(12);
+    doc.text(`Student: ${studentName}`, 10, 30);
+    doc.text(`Date: ${dateStr}`, 10, 40);
+    doc.line(10, 45, 200, 45);
+
+    let y = 55;
+    const margin = 10;
+    const pageWidth = doc.internal.pageSize.width;
+    const maxWidth = pageWidth - margin * 2;
+
+    messages.forEach((msg) => {
+      const role = msg.role === 'user' ? 'You' : 'Panda';
+      const text = `${role}: ${msg.text}`;
+      
+      const lines = doc.splitTextToSize(text, maxWidth);
+      
+      // Check if we need a new page
+      if (y + (lines.length * 7) > 280) {
+        doc.addPage();
+        y = 20;
+      }
+
+      doc.text(lines, margin, y);
+      y += (lines.length * 7) + 5;
+    });
+
+    const fileName = `Panda_Talk_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
+  };
+
+  // Input container handling
+  const inputContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleInputFocus = () => {
+    // Small delay to allow keyboard to appear
+    setTimeout(() => {
+      inputContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 300);
+  };
+
   return (
-    <div className="flex flex-col h-full bg-[#f8fafc]">
+    <div className="fixed inset-0 z-[100] flex flex-col bg-[#f8fafc] overscroll-none">
       {/* Mini Header */}
       <header className="px-4 py-3 flex items-center justify-between bg-white border-b border-gray-100 shadow-sm shrink-0">
         <div className="flex items-center gap-3">
@@ -94,12 +150,25 @@ export const PandaTalk = () => {
           </div>
         </div>
         
-        <button 
-          onClick={wrapUp}
-          className="px-4 py-1.5 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-lg shadow-sm transition-all active:scale-95"
-        >
-          Finish
-        </button>
+        <div className="flex items-center gap-2">
+          {messages.length > 1 && (
+            <button 
+              onClick={downloadChat}
+              className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg transition-all flex items-center gap-1.5"
+              title="Download as PDF"
+            >
+              <Download size={18} />
+              <span className="text-[10px] font-bold uppercase hidden sm:inline">Save PDF</span>
+            </button>
+          )}
+
+          <button 
+            onClick={wrapUp}
+            className="px-4 py-1.5 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-lg shadow-sm transition-all active:scale-95"
+          >
+            Finish
+          </button>
+        </div>
       </header>
 
       {/* Messages */}
@@ -117,7 +186,7 @@ export const PandaTalk = () => {
             <div className={cn(
               "max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed",
               msg.role === 'user' 
-                ? "bg-[#FF9EAA] text-white rounded-tr-none" 
+                ? "bg-[#FF8095] text-white rounded-tr-none" 
                 : "bg-white text-gray-700 shadow-sm border border-gray-100 rounded-tl-none"
             )}>
               {msg.text}
@@ -137,19 +206,23 @@ export const PandaTalk = () => {
       </div>
 
       {/* Input */}
-      <div className="p-4 bg-white border-t border-gray-100 pb-10">
+      <div 
+        ref={inputContainerRef}
+        className="p-4 bg-white border-t border-gray-100 sm:pb-4 pb-8"
+      >
         <div className="relative flex items-center bg-gray-50 rounded-full px-4 py-1">
           <input 
             placeholder="Type a message..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+            onFocus={handleInputFocus}
             className="flex-1 bg-transparent py-3 outline-none text-sm text-gray-700"
           />
           <button 
             onClick={handleSend}
             disabled={!input.trim() || isTyping}
-            className="p-2 text-[#FF9EAA] hover:bg-gray-200/50 rounded-full transition-all disabled:opacity-30"
+            className="p-2 text-[#FF8095] hover:bg-gray-200/50 rounded-full transition-all disabled:opacity-30"
           >
             <Send size={20} />
           </button>

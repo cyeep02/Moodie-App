@@ -31,8 +31,10 @@ export const MoodCheckIn = () => {
     const risk = await AlertService.checkRiskPatterns(user.user_id);
     if (risk.trigger) {
       console.log("Risk detected:", risk.reason);
-      // In a real app, this would trigger the actual parent notification logic
     }
+
+    // New: Check for monthly summary on the last day of the month
+    await AlertService.checkMonthlySummary(user.user_id);
 
     setLoading(false);
     setSuccess(true);
@@ -81,12 +83,12 @@ export const MoodCheckIn = () => {
                 className={`
                   aspect-square rounded-2xl flex flex-col items-center justify-center border-2 transition-all cursor-pointer
                   ${isActive 
-                    ? 'border-[#FF9EAA] bg-white shadow-md' 
+                    ? 'border-[#FF8095] bg-white shadow-md' 
                     : 'border-transparent bg-white hover:bg-white/90 hover:border-gray-100'}
                 `}
               >
                 <span className="text-4xl mb-1">{config.emoji}</span>
-                <span className={`text-[10px] font-bold text-center px-1 leading-tight ${isActive ? 'text-[#FF9EAA]' : 'text-gray-400'}`}>
+                <span className={`text-[10px] font-bold text-center px-1 leading-tight ${isActive ? 'text-[#FF8095]' : 'text-gray-400'}`}>
                   {label}
                 </span>
               </motion.div>
@@ -102,14 +104,14 @@ export const MoodCheckIn = () => {
           placeholder="What's happening in your day?..."
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          className="w-full h-32 p-4 rounded-3xl bg-white border-none shadow-sm outline-none text-gray-600 resize-none focus:ring-2 focus:ring-[#FF9EAA]/20"
+          className="w-full h-32 p-4 rounded-3xl bg-white border-none shadow-sm outline-none text-gray-600 resize-none focus:ring-2 focus:ring-[#FF8095]/20"
         />
       </section>
 
       <Button 
         onClick={handleSubmit}
         disabled={!selectedMood || loading}
-        className="w-full shadow-lg h-14"
+        className="w-full shadow-xl h-16 text-lg font-bold mt-4"
       >
         {loading ? 'Saving...' : 'Complete Check-in'}
       </Button>

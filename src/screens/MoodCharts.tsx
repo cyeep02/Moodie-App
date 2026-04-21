@@ -81,7 +81,7 @@ export const MoodCharts = () => {
             onClick={() => setView('chart')}
             className={cn(
               "p-2 rounded-lg transition-all",
-              view === 'chart' ? "bg-white shadow-sm text-[#FF9EAA]" : "text-gray-400"
+              view === 'chart' ? "bg-white shadow-sm text-[#FF8095]" : "text-gray-400"
             )}
           >
             <Activity size={18} />
@@ -90,7 +90,7 @@ export const MoodCharts = () => {
             onClick={() => setView('calendar')}
             className={cn(
               "p-2 rounded-lg transition-all",
-              view === 'calendar' ? "bg-white shadow-sm text-[#FF9EAA]" : "text-gray-400"
+              view === 'calendar' ? "bg-white shadow-sm text-[#FF8095]" : "text-gray-400"
             )}
           >
             <CalendarIcon size={18} />
@@ -118,8 +118,8 @@ export const MoodCharts = () => {
                     stroke="#94a3b8"
                   />
                   <YAxis 
-                    domain={[0, 5]} 
-                    ticks={[0, 1, 2, 3, 4, 5]}
+                    domain={[1, 6]} 
+                    ticks={[1, 2, 3, 4, 5, 6]}
                     fontSize={10}
                     tickLine={false}
                     axisLine={false}
@@ -144,10 +144,10 @@ export const MoodCharts = () => {
                   <Line 
                     type="monotone" 
                     dataKey="score" 
-                    stroke="#FF9EAA" 
+                    stroke="#FF8095" 
                     strokeWidth={4} 
-                    dot={{ fill: '#FF9EAA', r: 4, strokeWidth: 2, stroke: '#fff' }}
-                    activeDot={{ r: 6, fill: '#FF9EAA' }}
+                    dot={{ fill: '#FF8095', r: 4, strokeWidth: 2, stroke: '#fff' }}
+                    activeDot={{ r: 6, fill: '#FF8095' }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -210,10 +210,10 @@ export const MoodCharts = () => {
             </div>
 
             {monthStats && (
-              <Card className="p-4 bg-white/40 border-dashed border-2 border-[#FF9EAA]/20 flex items-center justify-between">
+              <Card className="p-4 bg-white/40 border-dashed border-2 border-[#FF8095]/20 flex items-center justify-between">
                 <div>
                   <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Month Summary</p>
-                  <p className="text-lg font-bold text-gray-700">Mostly <span className="text-[#FF9EAA]">{monthStats.label}</span></p>
+                  <p className="text-lg font-bold text-gray-700">Mostly <span className="text-[#FF8095]">{monthStats.label}</span></p>
                   <p className="text-[10px] text-gray-400 font-medium">Based on {monthStats.count} entries</p>
                 </div>
                 <div className="text-4xl bg-white p-3 rounded-2xl shadow-sm border border-gray-50">
@@ -230,8 +230,8 @@ export const MoodCharts = () => {
                 {days.map((day, i) => {
                   const mood = getMoodForDay(day);
                   const isCurrentMonth = format(day, 'M') === format(currentMonth, 'M');
-                  const isCalm = mood && mood.score >= 3;
-                  const isLowEnergy = mood && mood.score < 3;
+                  const isCalm = mood && mood.score >= 4;
+                  const isLowEnergy = mood && mood.score < 4;
 
                   return (
                     <div 
