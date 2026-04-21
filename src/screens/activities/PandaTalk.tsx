@@ -43,27 +43,65 @@ export const PandaTalk = () => {
     setIsTyping(true);
 
     try {
-      const chat = ai.chats.create({
+      console.log("Panda starting to think...");
+      
+      // Safety check - await it but don't let it crash the chat
+      if (user) {
+        try {
+          await AlertService.checkSensitiveContent(input, user.user_id);
+        } catch (e) {
+          console.error("Safety log error (non-blocking):", e);
+        }
+      }
+
+      // Build context
+      const contents = messages
+        .filter((_, i) => i > 0)
+        .map(m => ({
+          role: m.role === 'panda' ? 'model' : 'user',
+          parts: [{ text: m.text }]
+        }));
+
+      contents.push({
+        role: 'user',
+        parts: [{ text: input }]
+      });
+
+      console.log("Sending to AI...", { contentCount: contents.length });
+
+      const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         config: {
           systemInstruction: PANDA_SYSTEM_INSTRUCTION,
         },
-        history: messages.map(m => ({
-          role: m.role === 'panda' ? 'model' : 'user',
-          parts: [{ text: m.text }]
-        }))
+        contents: contents
       });
 
-      const response = await chat.sendMessage({ message: input });
+      console.log("AI Response received");
+
       const pandaMsg: Message = { 
-        id: (Date.now() + 1).toString(), 
+        id: `panda-${Date.now()}`, 
         role: 'panda', 
         text: response.text || "I'm here for you." 
       };
       setMessages(prev => [...prev, pandaMsg]);
-    } catch (error) {
-      console.error("AI Error:", error);
-      setMessages(prev => [...prev, { id: 'err', role: 'panda', text: "I'm sorry, I'm feeling a little sleepy right now. Could you try again?" }]);
+    } catch (error: any) {
+      console.error("Panda AI Error Details:", error);
+      
+      let errorText = "I'm sorry, I'm having trouble connecting to my wise panda senses. Could you try sending that again?";
+      
+      const errorStr = JSON.stringify(error).toLowerCase();
+      if (error?.status === 429 || error?.code === 429 || errorStr.includes('429') || errorStr.includes('exhausted') || errorStr.includes('credits') || errorStr.includes('quota')) {
+        errorText = "I'm feeling a bit exhausted! It looks like your Gemini API credits are depleted. Please check your billing settings in AI Studio to restore my energy.";
+      } else if (errorStr.includes('key') || errorStr.includes('unauthorized') || errorStr.includes('401')) {
+        errorText = "I can't seem to find my key! Please check if your GEMINI_API_KEY is correctly set in the Secrets panel.";
+      }
+
+      setMessages(prev => [...prev, { 
+        id: `err-${Date.now()}`, 
+        role: 'panda', 
+        text: errorText 
+      }]);
     } finally {
       setIsTyping(false);
     }
